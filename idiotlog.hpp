@@ -1,6 +1,6 @@
 /* idiotlog - C++ header-only logging for idiots like me
  *
- * Copyright (C) 2022 Tianjian Hu <i@tianjian.hu>
+ * Copyright (C) 2022 SaltfishAmi <ami@saltfish.moe>
  * This program is free software. It comes without any warranty, to
  * the extent permitted by applicable law. You can redistribute it
  * and/or modify it under the terms of the Do What The Fuck You Want
@@ -12,6 +12,11 @@
 #ifndef IDIOTLOG_HPP_
 #define IDIOTLOG_HPP_
 #pragma once
+
+// Turn this on, and yay! You disabled verbose outputting.
+#ifndef IDIOTLOG_KEEP_IT_SIMPLE
+#include <ctime>
+#endif
 
 #include <iostream>
 
@@ -40,6 +45,9 @@ class too_complex_logger {
 private:
   bool enable_;
   int level_;
+#ifndef IDIOTLOG_KEEP_IT_SIMPLE
+  bool verbose_;
+#endif // IDIOTLOG_KEEP_IT_SIMPLE
   idiot_logger const idiot_logger_;
   idiot_logger const dummy_logger_;
 public:
@@ -50,24 +58,56 @@ public:
   void enable() { enable_ = true; }
   void disable() { enable_ = false; }
   bool enabled() const { return enable_; }
-  void set_level(int level) { level_ = level; }
+  void set_level(int level = 0) { level_ = level; }
   int get_level() const { return level_; }
+#ifndef IDIOTLOG_KEEP_IT_SIMPLE
+  bool verbose() const { return verbose_; }
+  void verbose(bool verbose = true) { verbose_ = verbose; }
+#endif // IDIOTLOG_KEEP_IT_SIMPLE
+
+#ifndef IDIOTLOG_KEEP_IT_SIMPLE
+private:
+  std::string const timestamp() const {
+    std::time_t const now = std::time(nullptr);
+    char buf[25] = {0};
+#if __cplusplus >= 201103L
+    std::strftime(buf, 25, "%Y-%m-%dT%H:%M:%S%z", std::localtime(&now)); // C++11
+#else // __cplusplus >= 201103L
+    std::strftime(buf, 20, "%Y-%m-%dT%H:%M:%S", std::localtime(&now));
+#endif // __cplusplus >= 201103L
+    buf[25] = 0;
+    return std::string(buf);
+  }
+#endif // IDIOTLOG_KEEP_IT_SIMPLE
+
 public:
   template <class Coutable>
-  too_complex_logger const & operator<<(Coutable const & msg) const {
-    if (enable_) {
-      std::cout << msg;
+  idiot_logger const & operator<<(Coutable const & msg) const {
+    if (!enable_) {
+      return dummy_logger_;
     }
-
-    return *this;
+#ifndef IDIOTLOG_KEEP_IT_SIMPLE
+    if (verbose_) {
+      idiot_logger_ << timestamp() << " ";
+    }
+#endif // IDIOTLOG_KEEP_IT_SIMPLE
+    return (idiot_logger_ << msg);
   }
 
   idiot_logger const & level(int level) const {
     if (!enable_ || level < level_) {
       return dummy_logger_;
     }
-
+#ifndef IDIOTLOG_KEEP_IT_SIMPLE
+    if (verbose_) {
+      idiot_logger_ << timestamp() << " [" << level << "] ";
+    }
+#endif // IDIOTLOG_KEEP_IT_SIMPLE
     return idiot_logger_;
+  }
+
+  idiot_logger const & operator()(int level) const {
+    return this->level(level);
   }
 };
 
