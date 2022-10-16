@@ -13,6 +13,10 @@
 #define IDIOTLOG_HPP_
 #pragma once
 
+#if __cplusplus >= 201103L || (defined(_MSC_VER) && _MSC_VER >= 1900)
+#define IDIOTLOG_CPP11 1
+#endif 
+
 // Turn this on, and yay! You disabled verbose outputting.
 #ifndef IDIOTLOG_KEEP_IT_SIMPLE
 #include <ctime>
@@ -68,13 +72,13 @@ public:
 #ifndef IDIOTLOG_KEEP_IT_SIMPLE
 private:
   std::string const timestamp() const {
-    std::time_t const now = std::time(nullptr);
+    std::time_t const now = std::time(0);
     char buf[25] = {0};
-#if __cplusplus >= 201103L
+#ifdef IDIOTLOG_CPP11
     std::strftime(buf, 25, "%Y-%m-%dT%H:%M:%S%z", std::localtime(&now)); // C++11
-#else // __cplusplus >= 201103L
+#else // IDIOTLOG_CPP11
     std::strftime(buf, 20, "%Y-%m-%dT%H:%M:%S", std::localtime(&now));
-#endif // __cplusplus >= 201103L
+#endif // IDIOTLOG_CPP11
     buf[25] = 0;
     return std::string(buf);
   }
